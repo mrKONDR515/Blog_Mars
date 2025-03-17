@@ -1,5 +1,5 @@
-from flask import Flask, render_template, redirect, abort, request
-from data import db_session
+from flask import Flask, render_template, redirect, abort, request, make_response, jsonify
+from data import db_session, news_api
 from data.news import News
 from data.users import User
 from form.user import RegisterForm
@@ -77,7 +77,7 @@ def logout():
     return redirect("/")
 
 
-@app.route('/news',  methods=['GET', 'POST'])
+@app.route('/news', methods=['GET', 'POST'])
 @login_required
 def add_news():
     form = NewsForm()
@@ -123,7 +123,7 @@ def edit_news(id):
             return redirect('/')
         else:
             abort(404)
-    return render_template('jobs.html',
+    return render_template('news.html',
                            title='Редактирование новости',
                            form=form
                            )
@@ -146,8 +146,18 @@ def news_delete(id):
 
 def main():
     db_session.global_init("db/blogs.db")
-
+    app.register_blueprint(news_api.blueprint)
     app.run()
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+@app.errorhandler(400)
+def bad_request(_):
+    return make_response(jsonify({'error': 'Bad Request'}), 400)
 
 
 if __name__ == '__main__':
